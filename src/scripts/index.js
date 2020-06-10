@@ -1,9 +1,7 @@
-import { Card } from './CardPlane';
 import { CardCube } from './CardCube';
 import { Deck } from './DeckCube';
-import { Global } from './Global';
 import { OrbitControls } from './helpers/OrbitControls';
-import { sRGBEncoding, Clock, Scene, PerspectiveCamera, WebGLRenderer, Color, AxesHelper, PCFSoftShadowMap, BasicShadowMap, Vector3, CameraHelper, BoxGeometry, MeshPhongMaterial, Mesh } from 'three';
+import { sRGBEncoding, Clock, Scene, PerspectiveCamera, WebGLRenderer, Color, AxesHelper, PCFSoftShadowMap, Vector3, Raycaster, Vector2 } from 'three';
 import { Table } from './Table';
 import { TextureManager } from './TextureManager';
 import { WorldLights } from './WorldLights';
@@ -15,6 +13,9 @@ const scene = new Scene();
 scene.background = new Color(0xa8dcff);
 
 const camera = new PerspectiveCamera(40, window.innerWidth / window.innerHeight, 0.1, 1000);
+
+const mouse = new Vector2();
+const ray = new Raycaster();
 
 const renderer = new WebGLRenderer({ antialias: true });
 renderer.setSize(window.innerWidth, window.innerHeight);
@@ -54,7 +55,7 @@ camera.lookAt(0, 0, 0);
 const textureManager = new TextureManager(renderer);
 
 const table = new Table(textureManager, scene, new Vector3(0, 0, 0), 30);
-const deck = new Deck(textureManager, scene, new Vector3(2, 0, 0));
+const deck = new Deck(textureManager, scene, new Vector3(0, 0, 0));
 
 const cDebug = new CardCube(textureManager, scene, 'two_of_wands', new Vector3(-2, 1, -2));
 const cDebug2 = new CardCube(textureManager, scene, 'five_of_swords', new Vector3(-2, 2, 0));
@@ -81,8 +82,17 @@ const animate = function () {
   table.update();
   deck.update();
 
+  ray.setFromCamera(mouse, camera);
+  deck.raycast(ray);
+
   renderer.render(scene, camera);
 };
+
+function onMouseMove( event ) {
+  mouse.x = ( event.clientX / window.innerWidth ) * 2 - 1;
+  mouse.y = - ( event.clientY / window.innerHeight ) * 2 + 1;
+}
+window.addEventListener('mousemove', onMouseMove, false);
 
 function onWindowResize() {
   camera.aspect = window.innerWidth / window.innerHeight;

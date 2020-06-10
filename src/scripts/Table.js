@@ -62,6 +62,7 @@ class Table {
         planeGeometry.computeVertexNormals();
         this.mesh = new Mesh(planeGeometry, this._createMaterial());
         this.mesh.receiveShadow = true;
+        this.mesh.name = "Table";
     }
 
     /**

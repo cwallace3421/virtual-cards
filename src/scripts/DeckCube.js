@@ -1,7 +1,7 @@
 import { BufferGeometryUtils } from './helpers/BufferGeometryUtils';
 import { CardGeometry } from './CardGeometry';
 import { Global } from './Global';
-import { PlaneBufferGeometry, Mesh, MathUtils, Vector3, MeshStandardMaterial, Texture, Scene, BoxBufferGeometry } from 'three';
+import { BufferGeometry, Mesh, MathUtils, Vector3, MeshStandardMaterial, Texture, Scene, BoxBufferGeometry, Box3, Raycaster } from 'three';
 import { TextureManager } from './TextureManager';
 
 class Deck {
@@ -22,6 +22,9 @@ class Deck {
         /** @type {Mesh} */
         this.mesh = undefined;
 
+        /** @type {Box3} */
+        this.bb = undefined;
+
         Promise.all([
             textureManager.loadTarotTexture('back'),
             textureManager.loadTarotTexture('edge'),
@@ -36,7 +39,6 @@ class Deck {
             this._createMesh();
             this.scene.add(this.mesh);
             this.meshsLoaded = true;
-            // this.setPosition(this.position);
             console.log(`deck mesh created`);
         }
     }
@@ -54,6 +56,21 @@ class Deck {
         }
     }
 
+    /**
+     * @param {Raycaster} raycaster
+     */
+    raycast(raycaster) {
+        if (this.meshsLoaded) {
+            const result = raycaster.ray.intersectsBox(this.bb);
+            if (result) {
+                console.log(result);
+                // TODO: Process result internally
+            }
+            return result;
+        }
+        return false;
+    }
+
     _createMesh() {
         const geoms = [];
         const numOfCards = Global.DeckVisualHeight;
@@ -64,6 +81,7 @@ class Deck {
         }
         const deckGeometry = BufferGeometryUtils.mergeBufferGeometries(geoms);
         this._setGeometryGroups(deckGeometry, numOfCards);
+        this._createBoundingBox(deckGeometry, numOfCards);
 
         for (let i = 0; i < geoms.length; i++) {
             geoms[i].dispose();
@@ -123,6 +141,25 @@ class Deck {
             geometry.addGroup(group2Index, (1 * 6) /* 1 Faces */, 1);
             geometry.addGroup(group3Index, (1 * 6) /* 1 Faces */, 2);
         }
+    }
+
+    /**
+     * @param {BufferGeometry} geometry
+     * @param {Number} numOfCards
+     */
+    _createBoundingBox(geometry, numOfCards) {
+        this.bb = new Box3(
+            new Vector3(
+                this.position.x - (Global.CardWidth / 2),
+                this.position.y,
+                this.position.z - (Global.CardHeight / 2)
+            ),
+            new Vector3(
+                this.position.x + (Global.CardWidth / 2),
+                this.position.y + (Global.CardThickness * numOfCards),
+                this.position.z + (Global.CardHeight / 2)
+            )
+        );
     }
 
 }
