@@ -44,6 +44,7 @@ class Deck {
             this.scene.add(this.deckMesh);
             this.scene.add(this.selectMesh);
             this.meshesLoaded = true;
+            this.setPosition(this.position);
             console.log(`deck mesh created`);
         }
     }
@@ -54,6 +55,16 @@ class Deck {
             this.deckMesh.position.x = x;
             this.deckMesh.position.y = y;
             this.deckMesh.position.z = z;
+            this.deckMesh.updateMatrixWorld();
+
+            this.selectMesh.position.x = x;
+            this.selectMesh.position.y = y;
+            this.selectMesh.position.z = z;
+            this.selectMesh.updateMatrixWorld();
+
+            for (let i = 0; i < this.bb.length; i++) {
+                this.bb[i].applyMatrix4(this.deckMesh.matrixWorld);
+            }
 
             this.position.x = x;
             this.position.y = y;
@@ -88,7 +99,9 @@ class Deck {
         const numOfCards = Global.DeckVisualHeight;
         for (let i = 0; i < numOfCards; i++) {
             const tempGeometry = CardGeometry.create();
-            this._setGeometryPosition(i, tempGeometry);
+            tempGeometry.rotateX(MathUtils.degToRad(-90));
+            tempGeometry.rotateY(MathUtils.degToRad(MathUtils.randFloat(-2, 2)));
+            tempGeometry.translate(MathUtils.randFloat(-.01, .01), (Global.CardThickness * i) + (Global.CardThickness / 2), MathUtils.randFloat(-.01, .01));
             geoms.push(tempGeometry);
         }
         const deckGeometry = BufferGeometryUtils.mergeBufferGeometries(geoms);
@@ -109,16 +122,8 @@ class Deck {
         this.deckMesh.castShadow = true;
 
         this.bb.push(new Box3(
-            new Vector3(
-                this.position.x - (Global.CardWidth / 2),
-                this.position.y,
-                this.position.z - (Global.CardHeight / 2)
-            ),
-            new Vector3(
-                this.position.x + (Global.CardWidth / 2),
-                this.position.y + (Global.CardThickness * numOfCards),
-                this.position.z + (Global.CardHeight / 2)
-            )
+            new Vector3(-(Global.CardWidth / 2), 0, -(Global.CardHeight / 2)),
+            new Vector3((Global.CardWidth / 2), (Global.CardThickness * numOfCards), (Global.CardHeight / 2)),
         ));
     }
 
@@ -129,16 +134,16 @@ class Deck {
         const geoms = [
             new PlaneBufferGeometry(Global.CardWidth + (margin * 2) + (thickness * 2), thickness)
                 .rotateX(MathUtils.degToRad(-90))
-                .translate(this.position.x, this.position.y + yOffset, this.position.z + (margin + (Global.CardHeight / 2) + (thickness / 2))), // Front
+                .translate(0, yOffset, (margin + (Global.CardHeight / 2) + (thickness / 2))), // Front
             new PlaneBufferGeometry(Global.CardWidth + (margin * 2) + (thickness * 2), thickness)
                 .rotateX(MathUtils.degToRad(-90))
-                .translate(this.position.x, this.position.y + yOffset, this.position.z - (margin + (Global.CardHeight / 2) + (thickness / 2))), // Back
+                .translate(0, yOffset, -(margin + (Global.CardHeight / 2) + (thickness / 2))), // Back
             new PlaneBufferGeometry(thickness, Global.CardHeight + (margin * 2))
                 .rotateX(MathUtils.degToRad(-90))
-                .translate(this.position.x + (margin + (Global.CardWidth / 2) + (thickness / 2)), this.position.y + yOffset, this.position.z), // Right
+                .translate((margin + (Global.CardWidth / 2) + (thickness / 2)), yOffset, 0), // Right
             new PlaneBufferGeometry(thickness, Global.CardHeight + (margin * 2))
                 .rotateX(MathUtils.degToRad(-90))
-                .translate(this.position.x - (margin + (Global.CardWidth / 2) + (thickness / 2)), this.position.y + yOffset, this.position.z), // Right
+                .translate(-(margin + (Global.CardWidth / 2) + (thickness / 2)), yOffset, 0), // Right
         ];
         const selectGeometry = BufferGeometryUtils.mergeBufferGeometries(geoms);
 
@@ -150,16 +155,8 @@ class Deck {
         this.selectMesh.receiveShadow = true;
 
         this.bb.push(new Box3(
-            new Vector3(
-                this.position.x - ((Global.CardWidth / 2) + margin + thickness),
-                this.position.y,
-                this.position.z - ((Global.CardHeight / 2) + margin + thickness)
-            ),
-            new Vector3(
-                this.position.x + ((Global.CardWidth / 2) + margin + thickness),
-                this.position.y + thickness,
-                this.position.z + ((Global.CardHeight / 2) + margin + thickness)
-            )
+            new Vector3(-((Global.CardWidth / 2) + margin + thickness), 0, -((Global.CardHeight / 2) + margin + thickness)),
+            new Vector3(((Global.CardWidth / 2) + margin + thickness), thickness, ((Global.CardHeight / 2) + margin + thickness)),
         ));
     }
 
@@ -180,16 +177,9 @@ class Deck {
      * @param {BoxBufferGeometry} geometry
      */
     _setGeometryPosition(index, geometry) {
-        const gap = Global.CardThickness;
-        const y = (gap * index) + (gap / 2);
         geometry.rotateX(MathUtils.degToRad(-90));
         geometry.rotateY(MathUtils.degToRad(MathUtils.randFloat(-2, 2)));
-        geometry.translate(
-            this.position.x + MathUtils.randFloat(-.01, .01),
-            this.position.y + y,
-            this.position.z + MathUtils.randFloat(-.01, .01)
-        );
-        geometry.computeVertexNormals();
+        geometry.translate(MathUtils.randFloat(-.01, .01), (Global.CardThickness * index) + (Global.CardThickness / 2), MathUtils.randFloat(-.01, .01));
     }
 
     /**

@@ -55,7 +55,7 @@ camera.lookAt(0, 0, 0);
 const textureManager = new TextureManager(renderer);
 
 const table = new Table(textureManager, scene, new Vector3(0, 0, 0), 30);
-const deck = new Deck(textureManager, scene, new Vector3(0, 0, 0));
+const deck = new Deck(textureManager, scene, new Vector3(3, 0, 1));
 
 const cDebug = new CardCube(textureManager, scene, 'two_of_wands', new Vector3(-2, 1, -2));
 const cDebug2 = new CardCube(textureManager, scene, 'five_of_swords', new Vector3(-2, 2, 0));
