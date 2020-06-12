@@ -6,6 +6,8 @@ import { Table } from './Table';
 import { TextureManager } from './TextureManager';
 import { WorldLights } from './WorldLights';
 import '../styles/index.scss';
+import { DeckUtils } from './DeckUtils';
+import { CardTypes, CardDB } from './CardDB';
 
 const clock = new Clock();
 
@@ -24,10 +26,6 @@ renderer.shadowMap.type = PCFSoftShadowMap;
 renderer.physicallyCorrectLights = true;
 renderer.outputEncoding = sRGBEncoding;
 renderer.setPixelRatio(window.devicePixelRatio);
-//renderer.toneMapping = ReinhardToneMapping;
-//renderer.toneMappingExposure = 3;
-// renderer.toneMapping = ACESFilmicToneMapping;
-// renderer.toneMappingExposure = 0.8;
 document.body.appendChild(renderer.domElement);
 
 const axesHelper = new AxesHelper(5);
@@ -55,10 +53,12 @@ camera.lookAt(0, 0, 0);
 const textureManager = new TextureManager(renderer);
 
 const table = new Table(textureManager, scene, new Vector3(0, 0, 0), 30);
-const deck = new Deck(textureManager, scene, new Vector3(3, 0, 1));
+// const deck = new Deck(textureManager, scene, new Vector3(3, 0, 1));
+const deckEmpty = DeckUtils.makeDeck(textureManager, scene, new Vector3(-2, 0, 0), CardTypes.EMPTY);
+const deckFull = DeckUtils.makeDeck(textureManager, scene, new Vector3(2, 0, 0), CardTypes.TAROT_CARDS);
 
-const cDebug = new CardCube(textureManager, scene, 'two_of_wands', new Vector3(-2, 1, -2));
-const cDebug2 = new CardCube(textureManager, scene, 'five_of_swords', new Vector3(-2, 2, 0));
+// const cDebug = new CardCube(textureManager, scene, 'two_of_wands', new Vector3(-2, 1, -2));
+// const cDebug2 = new CardCube(textureManager, scene, 'five_of_swords', new Vector3(-2, 2, 0));
 
 // const c1 = new Card(textureManager, scene, '19_the_sun', new Vector3(1, 2, -1));
 // const c2 = new Card(textureManager, scene, 'knight_of_cups', new Vector3(4, 2, 0));
@@ -69,9 +69,9 @@ const animate = function () {
 
   // cameraHelper.update();
 
-  cDebug.update();
-  cDebug2.update();
-  cDebug2.rotate(40 * delta);
+  // cDebug.update();
+  // cDebug2.update();
+  // cDebug2.rotate(40 * delta);
 
   orbit.update();
 
@@ -80,10 +80,12 @@ const animate = function () {
   // c2.update();
 
   table.update();
-  deck.update();
+  deckEmpty.update();
+  deckFull.update();
 
   ray.setFromCamera(mouse, camera);
-  deck.raycast(ray);
+  deckEmpty.raycast(ray);
+  deckFull.raycast(ray);
 
   renderer.render(scene, camera);
 };
@@ -100,5 +102,17 @@ function onWindowResize() {
   renderer.setSize(window.innerWidth, window.innerHeight);
 }
 window.addEventListener('resize', onWindowResize, false);
+
+window.addEventListener('keyup', function(event) {
+  const key = event.key;
+  if (key === 'Enter') {
+    const c = deckFull.removeCardFromTop();
+    if (c) {
+      console.log(`removed card: ${CardDB[c.type][c.index].name}`);
+      c.faceddown = false;
+      deckEmpty.addCardToTop(c);
+    }
+  }
+});
 
 animate();

@@ -68,6 +68,8 @@ class TextureManager {
      * @returns {Promise<Texture>}
      */
     async _loadTexture(id, path) {
+        console.assert(id !== undefined, `who the hell is calling me with an undefined id (${id}, ${path})`);
+        console.assert(path !== undefined, `who the hell is calling me with an undefined path (${id}, ${path})`);
         if (this.textureMap[id] === undefined) {
             if (this.loadingMap[id] === undefined) {
                 this.loadingMap[id] = this._requestTextureFromLoader(path).then((texture) => {

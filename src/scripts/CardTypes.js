@@ -19,7 +19,7 @@ const TAROT = {
     '5_the_hierophant': 'public/tarot/5_the_hierophant.jpg',
     '6_the_lovers': 'public/tarot/6_the_lovers.jpg',
     '7_the_chariot': 'public/tarot/7_the_chariot.jpg',
-    '8_stength': 'public/tarot/8_stength.jpg',
+    '8_strength': 'public/tarot/8_strength.jpg',
     '9_the_hermit': 'public/tarot/9_the_hermit.jpg',
     'ace_of_cups': 'public/tarot/ace_of_cups.jpg',
     'ace_of_pentacles': 'public/tarot/ace_of_pentacles.jpg',

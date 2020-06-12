@@ -142,11 +142,13 @@ const TAROT_CARDS = [
 const CardTypes = {
     PLAYING_CARDS: 'PLAYING_CARDS',
     TAROT_CARDS: 'TAROT_CARDS',
+    EMPTY: 'EMPTY',
 };
 
 const CardDB = {
-    [TYPES.PLAYING_CARDS]: PLAYING_CARDS,
-    [TYPES.TAROT_CARDS]: TAROT_CARDS,
+    [CardTypes.PLAYING_CARDS]: PLAYING_CARDS,
+    [CardTypes.TAROT_CARDS]: TAROT_CARDS,
+    [CardTypes.EMPTY]: [],
 };
 
 export { CardTypes, CardDB };

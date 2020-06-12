@@ -1,8 +1,10 @@
 import { BufferGeometryUtils } from './helpers/BufferGeometryUtils';
 import { CardGeometry } from './CardGeometry';
+import { CardModel } from './CardModel';
 import { Global } from './Global';
-import { BufferGeometry, Mesh, MathUtils, Vector3, MeshStandardMaterial, Texture, Scene, BoxBufferGeometry, Box3, Raycaster, PlaneBufferGeometry } from 'three';
+import { Mesh, MathUtils, Vector3, MeshStandardMaterial, Texture, Scene, BoxBufferGeometry, Box3, Raycaster, PlaneBufferGeometry } from 'three';
 import { TextureManager } from './TextureManager';
+import { CardTypes, CardDB } from './CardDB';
 
 class Deck {
 
@@ -12,12 +14,14 @@ class Deck {
      * @param {Scene} scene
      * @param {Vector3} position
      */
-    constructor(textureManager, scene, position) {
+    constructor(textureManager, scene, position, cards = [], isFaceDown = true) {
         this.textureManager = textureManager;
         this.scene = scene;
         this.position = position;
-        this.texturesLoaded = false;
-        this.meshesLoaded = false;
+        this.isFaceDown = isFaceDown;
+
+        /** @type {Array<CardModel>} */
+        this.cards = cards;
 
         /** @type {Mesh} */
         this.deckMesh = undefined;
@@ -28,34 +32,82 @@ class Deck {
         /** @type {Array<Box3>} */
         this.bb = [];
 
-        Promise.all([
-            textureManager.loadTarotTexture('back'),
-            textureManager.loadTarotTexture('edge'),
-            textureManager.loadGeneralTexture('paper_normal')
-        ]).then(() => {
-            this.texturesLoaded = true;
-        });
+        this.texturesLoaded = false;
+        this.hasMesh = false;
+
+        this.updateRequest = {
+            first: false, // Is this the first update request coming through (the initial mesh creation)
+            complete: false, // Has the update request been fully processed
+            ready: false, // Is the update request ready to be process (are the texture loaded)
+            isFaceDown: this.isFaceDown, // Is the update request going to flip the deck?
+            topCardName: undefined, // The name of the top card in the current deck
+        };
+
+        this.shuffle(2, true);
+    }
+
+    addCardToTop(card) {
+        if (this.updateRequest.complete) {
+            this.cards.push(card);
+            this._requestMeshAndTextureUpdate();
+            return true;
+        } else {
+            return false;
+        }
+    }
+
+    removeCardFromTop() {
+        if (this.cards.length > 0 && this.updateRequest.complete) {
+            const c = this.cards.pop();
+            this._requestMeshAndTextureUpdate();
+            return c;
+        } else {
+            return null;
+        }
+    }
+
+    shuffle(times = 1, regenerateMesh = false) {
+        for (let t = 0; t < times; t++) {
+            for (let i = this.cards.length - 1; i > 0; i--) {
+                const j = Math.floor(Math.random() * i);
+                const temp = this.cards[i];
+                this.cards[i] = this.cards[j];
+                this.cards[j] = temp;
+            }
+        }
+        if (regenerateMesh) {
+            this._requestMeshAndTextureUpdate();
+        }
     }
 
     update() {
-        if (!this.meshesLoaded && this.texturesLoaded) {
+        if (!this.updateRequest.complete && this.updateRequest.ready) {
             this._createDeckMesh();
-            this._createSelectMesh();
-            this.scene.add(this.deckMesh);
-            this.scene.add(this.selectMesh);
-            this.meshesLoaded = true;
+            if (this.deckMesh) {
+                this.scene.add(this.deckMesh);
+            }
+            if (this.updateRequest.first) {
+                this._createSelectMesh();
+                this.scene.add(this.selectMesh);
+                console.log(`deck mesh created`);
+            } else {
+                console.log(`deck mesh updated`);
+            }
+            this.hasMesh = true;
             this.setPosition(this.position);
-            console.log(`deck mesh created`);
+            this.updateRequest.complete = true;
         }
     }
 
     setPosition(pos) {
         const { x, y, z } = pos;
-        if (this.meshesLoaded) {
-            this.deckMesh.position.x = x;
-            this.deckMesh.position.y = y;
-            this.deckMesh.position.z = z;
-            this.deckMesh.updateMatrixWorld();
+        if (this.hasMesh) {
+            if (this.deckMesh) {
+                this.deckMesh.position.x = x;
+                this.deckMesh.position.y = y;
+                this.deckMesh.position.z = z;
+                this.deckMesh.updateMatrixWorld();
+            }
 
             this.selectMesh.position.x = x;
             this.selectMesh.position.y = y;
@@ -63,7 +115,7 @@ class Deck {
             this.selectMesh.updateMatrixWorld();
 
             for (let i = 0; i < this.bb.length; i++) {
-                this.bb[i].applyMatrix4(this.deckMesh.matrixWorld);
+                this.bb[i].applyMatrix4(this.selectMesh.matrixWorld);
             }
 
             this.position.x = x;
@@ -76,17 +128,20 @@ class Deck {
      * @param {Raycaster} raycaster
      */
     raycast(raycaster) {
-        if (this.meshesLoaded) {
+        if (this.hasMesh) {
             let result = false;
             for (let i = 0; i < this.bb.length; i++) {
-                if(raycaster.ray.intersectsBox(this.bb[i])) {
+                if (raycaster.ray.intersectsBox(this.bb[i])) {
                     result = true;
                     break;
                 }
             }
 
-            if (this.meshesLoaded) {
+            if (this.hasMesh && this.cards.length > 0) {
                 this.selectMesh.visible = result;
+            }
+            else if (this.cards.length === 0) {
+                this.selectMesh.visible = true;
             }
 
             return result;
@@ -94,37 +149,83 @@ class Deck {
         return false;
     }
 
+    _requestMeshAndTextureUpdate() {
+        let topCardName = undefined;
+        if (this.cards.length > 0) {
+            const topCard = this.cards[this.cards.length - 1];
+            const cardConfig = CardDB[topCard.type][topCard.index];
+            topCardName = cardConfig.name;
+
+            if (this.cards.length === 1) {
+                this.updateRequest.isFaceDown = topCard.faceddown;
+            } else {
+                this.updateRequest.isFaceDown = this.isFaceDown;
+            }
+        }
+
+        this.updateRequest.first = !this.hasMesh;
+        this.updateRequest.topCardName = topCardName;
+        this.updateRequest.complete = false;
+        this.updateRequest.ready = false;
+
+        Promise.all([
+            topCardName ? this.textureManager.loadTarotTexture(topCardName) : Promise.resolve(),
+            this.textureManager.loadTarotTexture('back'),
+            this.textureManager.loadTarotTexture('edge'),
+            this.textureManager.loadGeneralTexture('paper_normal')
+        ]).then(() => {
+            this.updateRequest.ready = true;
+        }).catch((err) => {
+            console.log(err);
+        });
+    }
+
     _createDeckMesh() {
         const geoms = [];
-        const numOfCards = Global.DeckVisualHeight;
-        for (let i = 0; i < numOfCards; i++) {
-            const tempGeometry = CardGeometry.create();
-            tempGeometry.rotateX(MathUtils.degToRad(-90));
-            tempGeometry.rotateY(MathUtils.degToRad(MathUtils.randFloat(-2, 2)));
-            tempGeometry.translate(MathUtils.randFloat(-.01, .01), (Global.CardThickness * i) + (Global.CardThickness / 2), MathUtils.randFloat(-.01, .01));
-            geoms.push(tempGeometry);
-        }
-        const deckGeometry = BufferGeometryUtils.mergeBufferGeometries(geoms);
-        this._setGeometryGroups(deckGeometry, numOfCards);
+        const numOfCards = this.cards.length;
 
-        for (let i = 0; i < geoms.length; i++) {
-            geoms[i].dispose();
+        if (this.hasMesh && this.deckMesh) {
+            this.scene.remove(this.deckMesh);
+            this.deckMesh.geometry.dispose();
+            this.deckMesh.material.forEach(m => m.dispose());
+            this.deckMesh = undefined;
         }
 
-        this.deckMesh = new Mesh(deckGeometry,
-            [
-                this._createMaterial(this.textureManager.getTexture('edge'), false),
-                this._createMaterial(this.textureManager.getTexture('back')),
-                this._createMaterial(this.textureManager.getTexture('back'))
-            ]
-        );
-        this.deckMesh.receiveShadow = true;
-        this.deckMesh.castShadow = true;
+        if (numOfCards > 0) {
+            this.isFaceDown = this.updateRequest.isFaceDown;
 
-        this.bb.push(new Box3(
-            new Vector3(-(Global.CardWidth / 2), 0, -(Global.CardHeight / 2)),
-            new Vector3((Global.CardWidth / 2), (Global.CardThickness * numOfCards), (Global.CardHeight / 2)),
-        ));
+            const xRotationRad = MathUtils.degToRad(!this.isFaceDown ? -90 : 90); // TODO: This will probably make the cards inverted when you flip them over
+            for (let i = 0; i < numOfCards; i++) {
+                const tempGeometry = CardGeometry.create();
+                tempGeometry.rotateX(xRotationRad);
+                tempGeometry.rotateY(MathUtils.degToRad(MathUtils.randFloat(-2, 2)));
+                tempGeometry.translate(MathUtils.randFloat(-.01, .01), (Global.CardThickness * i) + (Global.CardThickness / 2), MathUtils.randFloat(-.01, .01));
+                geoms.push(tempGeometry);
+            }
+            const deckGeometry = BufferGeometryUtils.mergeBufferGeometries(geoms);
+            this._setGeometryGroups(deckGeometry, numOfCards);
+
+            for (let i = 0; i < geoms.length; i++) {
+                geoms[i].dispose();
+            }
+
+            console.log(this.updateRequest.topCardName);
+            this.deckMesh = new Mesh(deckGeometry,
+                [
+                    this._createMaterial(this.textureManager.getTexture('edge'), false),
+                    this._createMaterial(this.textureManager.getTexture(this.updateRequest.topCardName)),
+                    this._createMaterial(this.textureManager.getTexture('back'))
+                ]
+            );
+            this.deckMesh.receiveShadow = true;
+            this.deckMesh.castShadow = true;
+
+            // TODO: Everytime a new mesh gets generated a new bb gets added
+            this.bb.push(new Box3(
+                new Vector3(-(Global.CardWidth / 2), 0, -(Global.CardHeight / 2)),
+                new Vector3((Global.CardWidth / 2), (Global.CardThickness * numOfCards), (Global.CardHeight / 2)),
+            ));
+        }
     }
 
     _createSelectMesh() {
@@ -178,7 +279,7 @@ class Deck {
      */
     _setGeometryPosition(index, geometry) {
         geometry.rotateX(MathUtils.degToRad(-90));
-        geometry.rotateY(MathUtils.degToRad(MathUtils.randFloat(-2, 2)));
+        geometry.rotateY(MathUtils.degToRad(MathUtils.randFloat(-20, 20)));
         geometry.translate(MathUtils.randFloat(-.01, .01), (Global.CardThickness * index) + (Global.CardThickness / 2), MathUtils.randFloat(-.01, .01));
     }
 
