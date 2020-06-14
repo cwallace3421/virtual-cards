@@ -77,7 +77,7 @@ class TextureManager {
                     texture.wrapS = RepeatWrapping;
                     texture.wrapT = RepeatWrapping;
                     texture.encoding = sRGBEncoding;
-                    texture.anisotropy = Math.floor(this.renderer.capabilities.getMaxAnisotropy() / 2);
+                    texture.anisotropy = Math.floor(this.renderer.capabilities.getMaxAnisotropy() * .75);
                     this.textureMap[id] = texture;
                     return texture;
                 });
