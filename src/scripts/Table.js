@@ -1,4 +1,4 @@
-import { Color, Scene, Vector3, Mesh, PlaneBufferGeometry, MeshStandardMaterial, RepeatWrapping, MathUtils } from "three";
+import { Color, Scene, Vector3, Mesh, PlaneBufferGeometry, MathUtils } from "three";
 import { MaterialManager } from './MaterialManager';
 
 class Table {

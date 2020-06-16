@@ -2,9 +2,9 @@ import { BufferGeometryUtils } from './helpers/BufferGeometryUtils';
 import { CardGeometry } from './CardGeometry';
 import { CardModel } from './CardModel';
 import { Global } from './Global';
-import { Mesh, MathUtils, Vector3, MeshStandardMaterial, Texture, Scene, BoxBufferGeometry, Box3, Raycaster, PlaneBufferGeometry } from 'three';
+import { Mesh, MathUtils, Vector3, Scene, Box3, Raycaster, PlaneBufferGeometry } from 'three';
 import { MaterialManager } from './MaterialManager';
-import { CardTypes, CardDB } from './CardDB';
+import { CardDB } from './CardDB';
 
 class Deck {
 
@@ -91,7 +91,7 @@ class Deck {
 
     update() {
         if (this._hasInitialised()) {
-            this.selectionMesh.visible = this.hover;
+            this.selectionMesh.visible = this.hover || this.selected;
         } else {
             this._createSelectionMesh();
             this.scene.add(this.selectionMesh);

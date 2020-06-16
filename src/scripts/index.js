@@ -1,10 +1,10 @@
 import { OrbitControls } from './helpers/OrbitControls';
-import { sRGBEncoding, Clock, Scene, PerspectiveCamera, WebGLRenderer, Color, AxesHelper, PCFSoftShadowMap, Vector3, Raycaster, Vector2, Camera } from 'three';
+import { sRGBEncoding, Clock, Scene, PerspectiveCamera, WebGLRenderer, Color, AxesHelper, PCFSoftShadowMap, Vector3, Raycaster, Vector2 } from 'three';
 import { Table } from './Table';
 import { MaterialManager } from './MaterialManager';
 import { WorldLights } from './WorldLights';
 import { DeckUtils } from './DeckUtils';
-import { CardTypes, CardDB } from './CardDB';
+import { CardTypes } from './CardDB';
 import '../styles/index.scss';
 
 /** @type {Scene} */
@@ -33,6 +33,9 @@ let table;
 
 /** @type {Array<Deck>} */
 let decks;
+
+/** @type {Deck} */
+let selectedDeck;
 
 const clock = new Clock();
 const mouse = new Vector2();
@@ -142,6 +145,15 @@ function onWindowResize() {
   }
 }
 window.addEventListener('resize', onWindowResize, false);
+
+window.addEventListener('mouseup', function (event) {
+  for (let i = 0; i < decks.length; i++) {
+    decks[i].deselect();
+    if (decks[i].isHover()) {
+      decks[i].select();
+    }
+  }
+});
 
 window.addEventListener('keyup', function (event) {
   const key = event.key;
