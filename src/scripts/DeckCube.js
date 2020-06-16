@@ -3,19 +3,19 @@ import { CardGeometry } from './CardGeometry';
 import { CardModel } from './CardModel';
 import { Global } from './Global';
 import { Mesh, MathUtils, Vector3, MeshStandardMaterial, Texture, Scene, BoxBufferGeometry, Box3, Raycaster, PlaneBufferGeometry } from 'three';
-import { TextureManager } from './TextureManager';
+import { MaterialManager } from './MaterialManager';
 import { CardTypes, CardDB } from './CardDB';
 
 class Deck {
 
     /**
      * @constructor
-     * @param {TextureManager} textureManager
+     * @param {MaterialManager} materialManager
      * @param {Scene} scene
      * @param {Vector3} position
      */
-    constructor(textureManager, scene, position, cards = [], isFaceDown = true) {
-        this.textureManager = textureManager;
+    constructor(materialManager, scene, position, cards = [], isFaceDown = true) {
+        this.materialManager = materialManager;
         this.scene = scene;
         this.position = position;
         this.isFaceDown = isFaceDown;
@@ -40,7 +40,7 @@ class Deck {
             complete: false, // Has the update request been fully processed
             ready: false, // Is the update request ready to be process (are the texture loaded)
             isFaceDown: this.isFaceDown, // Is the update request going to flip the deck?
-            topCardName: undefined, // The name of the top card in the current deck
+            config: undefined, // The config of the top card to render
         };
 
         this.shuffle(2, true);
@@ -150,11 +150,10 @@ class Deck {
     }
 
     _requestMeshAndTextureUpdate() {
-        let topCardName = undefined;
+        let cardConfig = undefined;
         if (this.cards.length > 0) {
             const topCard = this.cards[this.cards.length - 1];
-            const cardConfig = CardDB[topCard.type][topCard.index];
-            topCardName = cardConfig.name;
+            cardConfig = { type: topCard.type, ...CardDB[topCard.type][topCard.index]};
 
             if (this.cards.length === 1) {
                 this.updateRequest.isFaceDown = topCard.faceddown;
@@ -164,20 +163,19 @@ class Deck {
         }
 
         this.updateRequest.first = !this.hasMesh;
-        this.updateRequest.topCardName = topCardName;
+        this.updateRequest.config = cardConfig;
         this.updateRequest.complete = false;
         this.updateRequest.ready = false;
 
-        Promise.all([
-            topCardName ? this.textureManager.loadTarotTexture(topCardName) : Promise.resolve(),
-            this.textureManager.loadTarotTexture('back'),
-            this.textureManager.loadTarotTexture('edge'),
-            this.textureManager.loadGeneralTexture('paper_normal')
-        ]).then(() => {
+        if (cardConfig) {
+            this.materialManager.loadCardMaterial(cardConfig.type, cardConfig).then(() => {
+                this.updateRequest.ready = true;
+            }).catch((err) => {
+                console.log(err);
+            });
+        } else {
             this.updateRequest.ready = true;
-        }).catch((err) => {
-            console.log(err);
-        });
+        }
     }
 
     _createDeckMesh() {
@@ -187,11 +185,12 @@ class Deck {
         if (this.hasMesh && this.deckMesh) {
             this.scene.remove(this.deckMesh);
             this.deckMesh.geometry.dispose();
-            this.deckMesh.material.forEach(m => m.dispose());
+            // this.materialManager.disposeCardMaterial(type, name); TODO: Should store current top card, and new top card seperately
             this.deckMesh = undefined;
         }
 
         if (numOfCards > 0) {
+            const cardConfig = this.updateRequest.config;
             this.isFaceDown = this.updateRequest.isFaceDown;
 
             const xRotationRad = MathUtils.degToRad(!this.isFaceDown ? -90 : 90); // TODO: This will probably make the cards inverted when you flip them over
@@ -209,12 +208,12 @@ class Deck {
                 geoms[i].dispose();
             }
 
-            console.log(this.updateRequest.topCardName);
+            console.log(cardConfig);
             this.deckMesh = new Mesh(deckGeometry,
                 [
-                    this._createMaterial(this.textureManager.getTexture('edge'), false),
-                    this._createMaterial(this.textureManager.getTexture(this.updateRequest.topCardName)),
-                    this._createMaterial(this.textureManager.getTexture('back'))
+                    this.materialManager.getCardEdgeMaterial(cardConfig.type),
+                    this.materialManager.getCardMaterial(cardConfig.type, cardConfig.name),
+                    this.materialManager.getCardBackMaterial(cardConfig.type),
                 ]
             );
             this.deckMesh.receiveShadow = true;
@@ -264,14 +263,14 @@ class Deck {
     /**
      * @param {Texture} texture
      */
-    _createMaterial(texture, useNormal = true) {
-        const mat = new MeshStandardMaterial({
-            map: texture,
-            normalMap: this.textureManager.getTexture('paper_normal'),
-            roughness: .4
-        });
-        return mat;
-    }
+    // _createMaterial(texture, useNormal = true) {
+    //     const mat = new MeshStandardMaterial({
+    //         map: texture,
+    //         normalMap: this.textureManager.getTexture('paper_normal'),
+    //         roughness: .4
+    //     });
+    //     return mat;
+    // }
 
     /**
      * @param {Number} index

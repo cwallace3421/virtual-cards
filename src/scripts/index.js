@@ -1,7 +1,6 @@
 import { OrbitControls } from './helpers/OrbitControls';
 import { sRGBEncoding, Clock, Scene, PerspectiveCamera, WebGLRenderer, Color, AxesHelper, PCFSoftShadowMap, Vector3, Raycaster, Vector2, Camera } from 'three';
 import { Table } from './Table';
-import { TextureManager } from './TextureManager';
 import { MaterialManager } from './MaterialManager';
 import { WorldLights } from './WorldLights';
 import { DeckUtils } from './DeckUtils';
@@ -28,9 +27,6 @@ let axesHelper;
 
 /** @type {MaterialManager} */
 let materialManager;
-
-/** @type {TextureManager} */
-let textureManager;
 
 /** @type {Table} */
 let table;
@@ -71,12 +67,10 @@ function load() {
   controls = new OrbitControls(camera, renderer.domElement);
   lights = new WorldLights(scene);
 
-  textureManager = new TextureManager(renderer);
-  loadComplete = true;
-  // materialManager = new MaterialManager(renderer, false);
-  // materialManager.init().then(() => {
-  //   loadComplete = true;
-  // });
+  materialManager = new MaterialManager(renderer, false);
+  materialManager.init().then(() => {
+    loadComplete = true;
+  });
 }
 
 /**
@@ -86,10 +80,10 @@ let createStarted = false
 let createComplete = false;
 function create() {
   createStarted = true;
-  table = new Table(textureManager, scene, new Vector3(0, 0, 0), 30);
+  table = new Table(materialManager, scene, new Vector3(0, 0, 0), 30);
   decks = [
-    DeckUtils.makeDeck(textureManager, scene, new Vector3(-2, 0, 0), CardTypes.EMPTY),
-    DeckUtils.makeDeck(textureManager, scene, new Vector3(2, 0, 0), CardTypes.TAROT_CARDS),
+    DeckUtils.makeDeck(materialManager, scene, new Vector3(-2, 0, 0), CardTypes.EMPTY),
+    DeckUtils.makeDeck(materialManager, scene, new Vector3(2, 0, 0), CardTypes.TAROT_CARDS),
   ];
   createComplete = true;
 }
