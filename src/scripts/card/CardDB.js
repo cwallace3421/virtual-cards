@@ -1,6 +1,4 @@
 const PLAYING_CARDS = [
-    { name: 'back', label: 'back', path: 'tarot/back.jpg', default_count: 0 },
-    { name: 'edge', label: 'edge', path: 'tarot/edge.jpg', default_count: 0 },
     { name: 'ace_of_clubs', label: 'Ace of Clubs', path: 'playing/ace_of_clubs.jpg', default_count: 1 },
     { name: 'ace_of_diamonds', label: 'Ace of Diamonds', path: 'playing/ace_of_diamonds.jpg', default_count: 1 },
     { name: 'ace_of_hearts', label: 'Ace of Hearts', path: 'playing/ace_of_hearts.jpg', default_count: 1 },
@@ -57,8 +55,6 @@ const PLAYING_CARDS = [
 ];
 
 const TAROT_CARDS = [
-    { name: 'back', label: 'back', path: 'tarot/back.jpg', default_count: 0 },
-    { name: 'edge', label: 'edge', path: 'tarot/edge.jpg', default_count: 0 },
     { name: '0_the_fool', label: '0. The Fool', path: 'tarot/0_the_fool.jpg', default_count: 1 },
     { name: '10_whell_of_fortune', label: '10. Whell Of Fortune', path: 'tarot/10_whell_of_fortune.jpg', default_count: 1 },
     { name: '11_justice', label: '11. Justice', path: 'tarot/11_justice.jpg', default_count: 1 },

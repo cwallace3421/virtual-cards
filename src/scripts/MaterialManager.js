@@ -1,4 +1,4 @@
-import { CardTypes } from './CardDB';
+import { CardTypes } from './card/CardDB';
 import { Texture, TextureLoader, RepeatWrapping, sRGBEncoding, Renderer, MeshStandardMaterial } from 'three';
 
 class MaterialManager {

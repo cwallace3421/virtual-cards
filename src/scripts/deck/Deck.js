@@ -1,10 +1,9 @@
-import { BufferGeometryUtils } from './helpers/BufferGeometryUtils';
-import { CardGeometry } from './CardGeometry';
-import { CardModel } from './CardModel';
-import { Global } from './Global';
+import { BufferGeometryUtils } from '../helpers/BufferGeometryUtils';
+import { CardDB } from '../card/CardDB';
+import { CardGeometry } from '../card/CardGeometry';
+import { Global } from '../Global';
+import { MaterialManager } from '../MaterialManager';
 import { Mesh, MathUtils, Vector3, Scene, Box3, Raycaster, PlaneBufferGeometry } from 'three';
-import { MaterialManager } from './MaterialManager';
-import { CardDB } from './CardDB';
 
 class Deck {
 
@@ -20,7 +19,7 @@ class Deck {
         this.position = position;
         this.isFaceDown = isFaceDown;
 
-        /** @type {Array<CardModel>} */
+        /** @type {Array<{index: number, type: string, inverted: boolean}>} */
         this.cards = cards;
 
         /** @type {Mesh} */

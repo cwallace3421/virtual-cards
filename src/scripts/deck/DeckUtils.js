@@ -1,17 +1,17 @@
-import { Deck } from "./DeckCube";
-import { TextureManager } from "./TextureManager";
+import { CardDB } from "../card/CardDB";
+import { Deck } from "./Deck";
 import { Scene } from "three";
-import { CardDB } from "./CardDB";
+import { MaterialManager } from "../MaterialManager";
 
 class DeckUtils {
 
     /**
-     * @param {TextureManager} textureManager
+     * @param {MaterialManager} materialManager
      * @param {Scene} scene
      * @param {Vector3} position
      * @param {String} deckType
      */
-    static makeDeck(textureManager, scene, position, deckType) {
+    static makeDeck(materialManager, scene, position, deckType) {
         const cards = [];
         CardDB[deckType].forEach((el, i) => {
             if (el.default_count > 0) {
@@ -24,7 +24,7 @@ class DeckUtils {
                 }
             }
         });
-        return new Deck(textureManager, scene, position, cards, true);
+        return new Deck(materialManager, scene, position, cards, true);
     }
 }
 

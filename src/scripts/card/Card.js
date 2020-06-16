@@ -1,6 +1,6 @@
-import { Global } from './Global';
-import { PlaneBufferGeometry, Mesh, MathUtils, Vector3, MeshStandardMaterial, Texture, Scene } from 'three';
-import { TextureManager } from './TextureManager';
+import { Global } from '../Global';
+import { PlaneBufferGeometry, Mesh, MathUtils, Vector3, MeshStandardMaterial, Texture, Scene, BoxBufferGeometry, NearestFilter, LinearFilter } from 'three';
+import { TextureManager } from '../TextureManager';
 
 class Card {
     id;
@@ -10,8 +10,7 @@ class Card {
     textureManager;
     /** @type {Scene} */
     scene;
-    frontMesh;
-    backMesh;
+    mesh;
     position;
     texturesLoaded = false;
     meshsLoaded = false;
@@ -30,12 +29,16 @@ class Card {
         this.scene = scene;
         this.position = position;
 
+        /** @type {Mesh} */
+        this.mesh = null;
+
         this.width = Global.CardWidth;
         this.height = Global.CardHeight;
 
         Promise.all([
             textureManager.loadTarotTexture(id),
             textureManager.loadTarotTexture('back'),
+            textureManager.loadTarotTexture('edge'),
             textureManager.loadGeneralTexture('paper_normal')
         ]).then(() => {
             this.texturesLoaded = true;
@@ -45,8 +48,7 @@ class Card {
     update() {
         if (!this.meshsLoaded && this.texturesLoaded) {
             this._createMesh();
-            this.scene.add(this.frontMesh);
-            this.scene.add(this.backMesh);
+            this.scene.add(this.mesh);
             this.meshsLoaded = true;
             this.setPosition(this.position);
             console.log(`${this.id} mesh created`);
@@ -56,13 +58,9 @@ class Card {
     setPosition(pos) {
         const { x, y, z } = pos;
         if (this.meshsLoaded) {
-            this.frontMesh.position.x = x;
-            this.frontMesh.position.y = y;
-            this.frontMesh.position.z = z;
-
-            this.backMesh.position.x = x;
-            this.backMesh.position.y = y;
-            this.backMesh.position.z = z;
+            this.mesh.position.x = x;
+            this.mesh.position.y = y;
+            this.mesh.position.z = z;
 
             this.position.x = x;
             this.position.y = y;
@@ -73,34 +71,38 @@ class Card {
     rotate(deg, axis = new Vector3(1, 0, 0)) {
         if (this.meshsLoaded) {
             const rad = MathUtils.degToRad(deg);
-            this.frontMesh.rotateOnWorldAxis(axis, rad)
-            this.backMesh.rotateOnWorldAxis(axis, rad)
+            this.mesh.rotateOnWorldAxis(axis, rad)
         }
     }
 
     _createMesh() {
-        const frontGeometry = new PlaneBufferGeometry(this.width, this.height, 1, 1);
-        this._setUvCoordinatesForGeometry(frontGeometry);
-        this.frontMesh = new Mesh(frontGeometry, this._createMaterial(this.textureManager.getTexture(this.id)));
-        this.frontMesh.receiveShadow = true;
-        this.frontMesh.castShadow = true;
-
-        const backGeometry = new PlaneBufferGeometry(this.width, this.height, 1, 1);
-        this._setUvCoordinatesForGeometry(backGeometry);
-        this.backMesh = new Mesh(backGeometry, this._createMaterial(this.textureManager.getTexture('back')));
-        this.backMesh.rotateY(MathUtils.degToRad(180));
-        this.backMesh.receiveShadow = true;
-        this.backMesh.castShadow = true;
+        const geometry = new BoxBufferGeometry(this.width, this.height, Global.CardThickness);
+        geometry.clearGroups();
+        geometry.addGroup(0, (4 * 6), 0);
+        geometry.addGroup((4 * 6), 6, 1);
+        geometry.addGroup((4 * 6) + 6, 6 , 2);
+        this._setUvCoordinatesForGeometry(geometry);
+        this.mesh = new Mesh(
+            geometry,
+            [
+                this._createMaterial(this.textureManager.getTexture('edge'), false),
+                this._createMaterial(this.textureManager.getTexture(this.id)),
+                this._createMaterial(this.textureManager.getTexture('back')),
+            ]
+        );
+        // this.mesh = new Mesh(geometry,this._createMaterial(this.textureManager.getTexture('back')));
+        this.mesh.receiveShadow = true;
+        this.mesh.castShadow = true;
     }
 
     /**
      * @param {Texture} texture
      */
-    _createMaterial(texture) {
+    _createMaterial(texture, useNormals = true) {
         const mat = new MeshStandardMaterial({
             map: texture,
             normalMap: this.textureManager.getTexture('paper_normal'),
-            roughness: .3
+            roughness: .4
         });
         return mat;
     }
@@ -110,13 +112,17 @@ class Card {
      */
     _setUvCoordinatesForGeometry(geometry) {
         const uvAttribute = geometry.attributes.uv;
+        let vertexCount = 0;
         for (var i = 0; i < uvAttribute.count; i++) {
             let x = uvAttribute.getX(i);
             const y = uvAttribute.getY(i);
-            if (x === 1) {
-                x = Global.CardUVx;
+            if (vertexCount > (4 * 4)) {
+                if (x === 1) {
+                    x = Global.CardUVx;
+                }
             }
             uvAttribute.setXY(i, x, y);
+            vertexCount++;
         }
     }
 }

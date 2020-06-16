@@ -1,4 +1,4 @@
-import { TAROT, GENERAL } from './CardTypes';
+import { TAROT, GENERAL } from './card/CardTypes';
 import { TextureLoader, Texture, UnsignedByteType, PMREMGenerator, RepeatWrapping, LinearFilter, sRGBEncoding } from 'three';
 import { RGBELoader } from './helpers/RGBELoader';
 

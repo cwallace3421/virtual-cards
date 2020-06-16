@@ -1,10 +1,10 @@
+import { CardTypes } from './card/CardDB';
+import { DeckUtils } from './deck/DeckUtils';
+import { MaterialManager } from './MaterialManager';
 import { OrbitControls } from './helpers/OrbitControls';
 import { sRGBEncoding, Clock, Scene, PerspectiveCamera, WebGLRenderer, Color, AxesHelper, PCFSoftShadowMap, Vector3, Raycaster, Vector2 } from 'three';
 import { Table } from './Table';
-import { MaterialManager } from './MaterialManager';
 import { WorldLights } from './WorldLights';
-import { DeckUtils } from './DeckUtils';
-import { CardTypes } from './CardDB';
 import '../styles/index.scss';
 
 /** @type {Scene} */
