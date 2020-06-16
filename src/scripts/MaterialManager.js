@@ -29,6 +29,8 @@ class MaterialManager {
             [CardTypes.TAROT_CARDS]: {},
             [CardTypes.PLAYING_CARDS]: {},
             TABLE: undefined,
+            HOVER: undefined,
+            SELECTED: undefined,
         };
 
         this.textures = {
@@ -126,6 +128,13 @@ class MaterialManager {
             this.materials.TABLE.material.normalMap.repeat.set(texScale, texScale);
             console.info('Material Manager: Table material has been loaded');
         });
+
+        this.materials.HOVER = {
+            material: new MeshStandardMaterial({ color: 0x999999, roughness: 1 }),
+        };
+        this.materials.SELECTED = {
+            material: new MeshStandardMaterial({ color: 0x999999, roughness: 1 }),
+        };
     }
 
     getOtherMaterials(type) {
