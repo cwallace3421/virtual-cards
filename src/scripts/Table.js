@@ -18,38 +18,27 @@ class Table {
         this.width = size;
         this.height = size;
         this.color = color;
-        this.meshesLoaded = false;
-        this.texturesLoaded = false;
         this.roughness = .8;
 
         /** @type {Mesh} */
-        this.mesh = undefined;
-
-        this.texturesLoaded = true;
-        // Promise.all([
-        //     textureManager.loadGeneralTexture('felt_albedo'),
-        //     textureManager.loadGeneralTexture('felt_normal')
-        // ]).then(() => {
-        //     this.texturesLoaded = true;
-        // });
+        this.tableMesh = undefined;
     }
 
     update() {
-        if (!this.meshsLoaded && this.texturesLoaded) {
-            this._createMesh();
+        if (!this._hasTableMesh()) {
+            this._createTableMesh();
             this.setPosition(this.position);
-            this.meshsLoaded = true;
-            this.scene.add(this.mesh);
+            this.scene.add(this.tableMesh);
             console.log(`table mesh created`);
         }
     }
 
     setPosition(pos) {
         const { x, y, z } = pos;
-        if (this.meshsLoaded) {
-            this.mesh.position.x = x;
-            this.mesh.position.y = y;
-            this.mesh.position.z = z;
+        if (this._hasTableMesh()) {
+            this.tableMesh.position.x = x;
+            this.tableMesh.position.y = y;
+            this.tableMesh.position.z = z;
 
             this.position.x = x;
             this.position.y = y;
@@ -57,30 +46,22 @@ class Table {
         }
     }
 
-    _createMesh() {
+    _createTableMesh() {
         const planeGeometry = new PlaneBufferGeometry(this.width, this.height, 1, 1);
         planeGeometry.rotateX(MathUtils.degToRad(-90));
         planeGeometry.computeVertexNormals();
-        this.mesh = new Mesh(planeGeometry, this.materialManager.getOtherMaterials('TABLE'));
-        this.mesh.receiveShadow = true;
-        this.mesh.name = "Table";
+        this.tableMesh = new Mesh(planeGeometry, this.materialManager.getOtherMaterials('TABLE'));
+        this.tableMesh.receiveShadow = true;
+        this.tableMesh.name = "Table";
     }
 
     /**
-     * @param {Texture} texture
+     * Does the table mesh exist?
+     * @returns {boolean}
      */
-    // _createMaterial() {
-    //     const texScale = 10;
-    //     const mat = new MeshStandardMaterial({
-    //         color: this.color,
-    //         map: this.textureManager.getTexture('felt_albedo'),
-    //         normalMap: this.textureManager.getTexture('felt_normal'),
-    //         roughness: this.roughness
-    //     });
-    //     mat.map.repeat.set(texScale, texScale);
-    //     mat.normalMap.repeat.set(texScale, texScale);
-    //     return mat;
-    // }
+    _hasTableMesh() {
+        return this.tableMesh;
+    }
 }
 
 export { Table };
